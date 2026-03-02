@@ -21,7 +21,7 @@ const Tab = createBottomTabNavigator();
 
 
 // Se estiver usando celular físico na mesma rede Wi-Fi, use o IP do seu PC
-const API_URL = "http://192.168.0.101:3000/api/produtos";
+const API_URL = "http:/172.26.144.1:3000/api/produtos";
 
 const getTodayDate = () => {
   const today = new Date();
@@ -54,94 +54,105 @@ function Cadastro() {
   };
 
   const handleConfirm = async () => {
-    if (
-      !nomeProduto ||
-      !quantidadePorUnidade ||
-      !quantidadeDePacotes ||
-      !validade
-    ) {
-      Alert.alert("Atenção", "Preencha todos os campos obrigatórios!");
+  if (
+    !nomeProduto ||
+    !quantidadePorUnidade ||
+    !quantidadeDePacotes ||
+    !validade
+  ) {
+    Alert.alert("Atenção", "Preencha todos os campos obrigatórios!");
+    return;
+  }
+
+  let dataValidadeFormatada;
+  if (validade && validade.includes("/")) {
+    const [mes, ano] = validade.split("/");
+    if (mes && ano && mes.length === 2 && ano.length === 4) {
+      dataValidadeFormatada = `${ano}-${mes.padStart(2, '0')}-28`;
+    } else {
+      Alert.alert("Erro", "Formato de validade inválido (use MM/AAAA)");
       return;
     }
+  }
 
-    let dataValidadeFormatada;
-    if (validade && validade.includes("/")) {
-      const [mes, ano] = validade.split("/");
-      if (mes && ano && mes.length === 2 && ano.length === 4) {
-        dataValidadeFormatada = `${ano}-${mes}-28`;
-      } else {
-        Alert.alert("Erro", "Formato de validade inválido (use MM/AAAA)");
-        return;
-      }
-    }
+  const qtdUnidade = parseFloat(quantidadePorUnidade);
+  const qtdPacotes = parseInt(quantidadeDePacotes);
 
-    const qtdUnidade = parseFloat(quantidadePorUnidade);
-    const qtdPacotes = parseInt(quantidadeDePacotes);
+  if (isNaN(qtdUnidade) || isNaN(qtdPacotes) || qtdUnidade <= 0 || qtdPacotes <= 0) {
+    Alert.alert("Erro", "Quantidades devem ser números positivos");
+    return;
+  }
 
-    if (isNaN(qtdUnidade) || isNaN(qtdPacotes) || qtdUnidade <= 0 || qtdPacotes <= 0) {
-      Alert.alert("Erro", "Quantidades devem ser números positivos");
-      return;
-    }
-
-    const novoItem = {
-      nome: nomeProduto.trim(),
-      unidade: unidade || "kg",
-      quantidade_por_unidade: qtdUnidade,
-      quantidade_de_pacotes: qtdPacotes,
-      validade: dataValidadeFormatada,
-      data_recebimento: new Date().toISOString().split("T")[0],
-    };
-
-    console.log("Enviando para o backend:", JSON.stringify(novoItem, null, 2));
-
-    try {
-      const response = await axios.post(API_URL, novoItem, {
-        headers: { "Content-Type": "application/json" },
-      });
-
-      console.log("Sucesso! Resposta:", JSON.stringify(response.data, null, 2));
-
-      const created = response.data;
-      const id = created.id || created._id || "temp-" + Date.now();
-
-      Alert.alert("Sucesso", "Produto cadastrado!");
-
-      navigation.navigate("Relatórios", {
-        novoItem: { ...novoItem, id },
-      });
-
-      setNomeProduto(null);
-      setUnidade("kg");
-      setQuantidadePorUnidade("");
-      setQuantidadeDePacotes("1");
-      setValidade("");
-      setDataReceb(getTodayDate());
-    } catch (error) {
-      console.error("AXIOS ERROR DETALHADO:", error.message);
-      console.error("ERROR OBJECT:", error);
-
-      let mensagemErro = "Falha ao cadastrar. Tente novamente.";
-
-      if (error.response) {
-        console.log("STATUS CODE:", error.response.status);
-        console.log("RESPOSTA DO BACKEND:", JSON.stringify(error.response.data, null, 2));
-
-        mensagemErro = `Erro ${error.response.status}: ${
-          error.response.data?.error ||
-          error.response.data?.message ||
-          "Verifique os dados"
-        }`;
-      } else if (error.request) {
-        console.log("REQUEST ENVIADO MAS SEM RESPOSTA");
-        mensagemErro = "Não foi possível conectar ao servidor.\nPossíveis causas:\n- Backend offline\n- URL errada (use 10.0.2.2 no emulador)\n- Metro Bundler não rodando";
-      } else {
-        console.log("ERRO ANTES DE ENVIAR:", error.message);
-        mensagemErro = "Erro na configuração da requisição: " + error.message;
-      }
-
-      Alert.alert("Erro no cadastro", mensagemErro);
-    }
+  const novoItem = {
+    descricao: nomeProduto.trim(),
+    nome: nomeProduto.trim(),
+    unidade: unidade || "kg",
+    quantidade_por_unidade: qtdUnidade,
+    quantidade_de_pacotes: qtdPacotes,
+    validade: dataValidadeFormatada,
+    data_recebimento: new Date().toISOString().split("T")[0],
+    peso: qtdUnidade,
+    quantidade: qtdPacotes,
+    codBar: "0000000000000",
+    dataDeEntrada: new Date().toISOString().split("T")[0],
+    dataDeValidade: dataValidadeFormatada,
+    dataLimiteDeSaida: null,
+    codUsu: 1,
+    codOri: 1,
+    codList: 1
   };
+
+  console.log("Enviando para o backend:", JSON.stringify(novoItem, null, 2));
+
+  try {
+    const response = await axios.post(API_URL, novoItem, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    console.log("Resposta do backend:", JSON.stringify(response.data, null, 2));
+
+    // Sucesso: status 201 ou 200
+    Alert.alert("Sucesso", "Produto cadastrado com sucesso!");
+
+    const created = response.data;
+    const id = created.id || created._id || created.codProd || "temp-" + Date.now();
+
+    navigation.navigate("Relatórios", {
+      novoItem: { ...novoItem, id },
+    });
+
+    // Limpar formulário
+    setNomeProduto(null);
+    setUnidade("kg");
+    setQuantidadePorUnidade("");
+    setQuantidadeDePacotes("1");
+    setValidade("");
+    setDataReceb(getTodayDate());
+  } catch (error) {
+    console.error("AXIOS ERROR DETALHADO:", error.message);
+    console.error("ERROR OBJECT:", error);
+
+    let mensagemErro = "Falha ao cadastrar. Tente novamente.";
+
+    if (error.response) {
+      console.log("STATUS CODE:", error.response.status);
+      console.log("RESPOSTA DO BACKEND:", JSON.stringify(error.response.data, null, 2));
+
+      mensagemErro = `Erro ${error.response.status}: ${
+        error.response.data?.error ||
+        error.response.data?.mensagem ||
+        error.response.data?.erro ||
+        "Verifique os dados no backend"
+      }`;
+    } else if (error.request) {
+      mensagemErro = "Não foi possível conectar ao servidor.\nVerifique se o backend está rodando e use http://10.0.2.2:3000 no emulador.";
+    } else {
+      mensagemErro = "Erro na configuração da requisição: " + error.message;
+    }
+
+    Alert.alert("Erro no cadastro", mensagemErro);
+  }
+};
 
   return (
     <ScrollView>

@@ -28,7 +28,7 @@ export default function Relatorios() {
   const widthArr = [90, 100, 90, 100, 160, 100, 100, 140];
 
 
-  const API_URL = "http:/192.168.0.101:3000/api/produtos";
+const API_URL = "http://10.0.2.2:3000/api/produtos";
 
   const getTurno = () => {
     const agora = moment().tz("America/Sao_Paulo");
