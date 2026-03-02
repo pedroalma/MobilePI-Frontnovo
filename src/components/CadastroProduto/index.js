@@ -54,12 +54,7 @@ function Cadastro() {
   };
 
   const handleConfirm = async () => {
-  if (
-    !nomeProduto ||
-    !quantidadePorUnidade ||
-    !quantidadeDePacotes ||
-    !validade
-  ) {
+  if (!nomeProduto || !quantidadePorUnidade || !quantidadeDePacotes || !validade) {
     Alert.alert("Atenção", "Preencha todos os campos obrigatórios!");
     return;
   }
@@ -84,13 +79,13 @@ function Cadastro() {
   }
 
   const novoItem = {
-    descricao: nomeProduto.trim(),
     nome: nomeProduto.trim(),
     unidade: unidade || "kg",
     quantidade_por_unidade: qtdUnidade,
     quantidade_de_pacotes: qtdPacotes,
     validade: dataValidadeFormatada,
     data_recebimento: new Date().toISOString().split("T")[0],
+    descricao: nomeProduto.trim(),
     peso: qtdUnidade,
     quantidade: qtdPacotes,
     codBar: "0000000000000",
@@ -109,19 +104,20 @@ function Cadastro() {
       headers: { "Content-Type": "application/json" },
     });
 
-    console.log("Resposta do backend:", JSON.stringify(response.data, null, 2));
-
-    // Sucesso: status 201 ou 200
-    Alert.alert("Sucesso", "Produto cadastrado com sucesso!");
-
-    const created = response.data;
-    const id = created.id || created._id || created.codProd || "temp-" + Date.now();
-
-    navigation.navigate("Relatórios", {
-      novoItem: { ...novoItem, id },
+    console.log("Resposta do backend:", {
+      status: response.status,
+      data: response.data
     });
 
-    // Limpar formulário
+    // Sucesso: qualquer status 2xx
+    Alert.alert("Sucesso", "Produto cadastrado! ID: " + (response.data.id || response.data.codProd || "novo"));
+
+    const id = response.data.id || response.data.codProd || response.data._id || "temp-" + Date.now();
+
+    navigation.navigate("Relatórios", {
+      novoItem: { ...novoItem, id }
+    });
+
     setNomeProduto(null);
     setUnidade("kg");
     setQuantidadePorUnidade("");
@@ -129,25 +125,18 @@ function Cadastro() {
     setValidade("");
     setDataReceb(getTodayDate());
   } catch (error) {
-    console.error("AXIOS ERROR DETALHADO:", error.message);
-    console.error("ERROR OBJECT:", error);
+    console.error("AXIOS ERROR:", error.message);
+    console.error("STATUS:", error.response?.status);
+    console.error("RESPOSTA:", JSON.stringify(error.response?.data, null, 2));
 
-    let mensagemErro = "Falha ao cadastrar. Tente novamente.";
+    let mensagemErro = "Falha ao cadastrar. Veja o console.";
 
     if (error.response) {
-      console.log("STATUS CODE:", error.response.status);
-      console.log("RESPOSTA DO BACKEND:", JSON.stringify(error.response.data, null, 2));
-
-      mensagemErro = `Erro ${error.response.status}: ${
-        error.response.data?.error ||
-        error.response.data?.mensagem ||
-        error.response.data?.erro ||
-        "Verifique os dados no backend"
-      }`;
+      mensagemErro = `Erro ${error.response.status}: ${error.response.data?.error || "Verifique o backend"}`;
     } else if (error.request) {
-      mensagemErro = "Não foi possível conectar ao servidor.\nVerifique se o backend está rodando e use http://10.0.2.2:3000 no emulador.";
+      mensagemErro = "Não foi possível conectar. Verifique backend e URL (10.0.2.2 no emulador)";
     } else {
-      mensagemErro = "Erro na configuração da requisição: " + error.message;
+      mensagemErro = "Erro: " + error.message;
     }
 
     Alert.alert("Erro no cadastro", mensagemErro);
