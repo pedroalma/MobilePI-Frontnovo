@@ -17,7 +17,7 @@ import Relatorios from "../Relatorios/index"; // ajuste o caminho se necessário
 
 const Tab = createBottomTabNavigator();
 
-const API_URL = "http://192.168.0.101:3000/api/produtos";
+const API_URL = "http://192.168.112.1:3000/api/produtos";
 
 const getTodayDate = () => {
   const today = new Date();
