@@ -1,161 +1,113 @@
 import React, { useState, useCallback } from "react";
-import { StyleSheet, View, TextInput, TouchableOpacity, Text } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, Alert } from "react-native";
 import { Table, Row } from "react-native-table-component";
 import { useFocusEffect, useRoute, useNavigation } from "@react-navigation/native";
 import Orientation from "react-native-orientation-locker";
 
-export default function Relatorios() {
+const API_URL = "http://192.168.0.101:3000/api/cestas";
+
+export default function RelatoriosCestas() {
   const route = useRoute();
   const navigation = useNavigation();
 
   const [tableData, setTableData] = useState([]);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [editData, setEditData] = useState([]);
+
+  const carregarCestas = async () => {
+    try {
+      const response = await fetch(API_URL);
+      if (!response.ok) throw new Error('Falha ao carregar cestas');
+
+      const json = await response.json();
+      const cestas = json.cestas || [];
+
+      const linhas = cestas.map(c => [
+        c.produtos.map(p => `${p.descricao} (${p.quantidade})`).join(', '),
+        c.descricao || 'Sem descrição',
+        c.dataDeSaida,
+        <View style={styles.actions}>
+          <TouchableOpacity onPress={() => Alert.alert('Editar cesta', 'Funcionalidade em desenvolvimento')}>
+            <Text style={styles.actionText}>Editar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleExcluir(c.codCes)}>
+            <Text style={styles.actionTextDelete}>Excluir</Text>
+          </TouchableOpacity>
+        </View>,
+      ]);
+
+      setTableData(linhas);
+    } catch (err) {
+      Alert.alert("Erro", "Não foi possível carregar as cestas");
+    }
+  };
+
+  const handleExcluir = (codCes) => {
+    Alert.alert(
+      "Excluir Cesta",
+      "Tem certeza que deseja excluir esta cesta?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await fetch(`${API_URL}/${codCes}`, { method: 'DELETE' });
+              if (!response.ok) throw new Error('Falha ao excluir');
+              Alert.alert("Sucesso", "Cesta excluída!");
+              carregarCestas();
+            } catch (err) {
+              Alert.alert("Erro", "Não foi possível excluir");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   useFocusEffect(
     useCallback(() => {
-      // 🔒 trava a tela em modo retrato
       Orientation.lockToPortrait();
+      carregarCestas();
 
-      if (route.params?.novoItem) {
-        setTableData((prev) => [...prev, route.params.novoItem]);
-        navigation.setParams({ novoItem: null });
-      }
-
-      // 🔓 libera orientação ao sair da tela
-      return () => {
-        Orientation.unlockAllOrientations();
-      };
-    }, [route.params, navigation])
+      return () => Orientation.unlockAllOrientations();
+    }, [])
   );
-
-  const startEditing = (index) => {
-    setEditingIndex(index);
-    setEditData([...tableData[index]]);
-  };
-
-  const saveEditing = () => {
-    const newData = [...tableData];
-    newData[editingIndex] = editData;
-    setTableData(newData);
-    setEditingIndex(null);
-    setEditData([]);
-  };
-
-  const cancelEditing = () => {
-    setEditingIndex(null);
-    setEditData([]);
-  };
-
-  const deleteRow = (index) => {
-    setTableData((prev) => prev.filter((_, i) => i !== index));
-  };
 
   return (
     <View style={styles.container}>
-      <Table borderStyle={{ borderWidth: 1 }}>
+      <Table borderStyle={{ borderWidth: 1, borderColor: '#c8e1ff' }}>
         <Row
           data={["Produtos", "Descrição", "Data de Saída", "Ações"]}
+          widthArr={[200, 150, 120, 120]}
           style={styles.head}
-          textStyle={styles.text}
+          textStyle={styles.textHead}
         />
-
-        {tableData.map((row, index) => (
-          <Row
-            key={index}
-            data={
-              editingIndex === index
-                ? [
-                    <TextInput
-                      style={styles.input}
-                      value={Array.isArray(editData[0]) ? editData[0].join(", ") : ""}
-                      onChangeText={(text) => {
-                        const newEdit = [...editData];
-                        newEdit[0] = text.split(", ");
-                        setEditData(newEdit);
-                      }}
-                    />,
-                    <TextInput
-                      style={styles.input}
-                      value={editData[1] || ""}
-                      onChangeText={(text) => {
-                        const newEdit = [...editData];
-                        newEdit[1] = text;
-                        setEditData(newEdit);
-                      }}
-                    />,
-                    <TextInput
-                      style={styles.input}
-                      value={editData[2] || ""}
-                      onChangeText={(text) => {
-                        const newEdit = [...editData];
-                        newEdit[2] = text;
-                        setEditData(newEdit);
-                      }}
-                    />,
-                    <View style={styles.buttonContainer}>
-                      <TouchableOpacity onPress={saveEditing} style={styles.button}>
-                        <Text style={styles.buttonText}>Salvar</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={cancelEditing} style={styles.button}>
-                        <Text style={styles.buttonText}>Cancelar</Text>
-                      </TouchableOpacity>
-                    </View>,
-                  ]
-                : [
-                    Array.isArray(row[0]) ? row[0].join(", ") : row[0],
-                    row[1],
-                    row[2],
-                    <View style={styles.buttonContainer}>
-                      <TouchableOpacity onPress={() => startEditing(index)} style={styles.button}>
-                        <Text style={styles.buttonText}>Editar</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => deleteRow(index)} style={styles.button}>
-                        <Text style={styles.buttonText}>Excluir</Text>
-                      </TouchableOpacity>
-                    </View>,
-                  ]
-            }
-            textStyle={styles.text}
-          />
-        ))}
       </Table>
+
+      <ScrollView style={{ flex: 1 }}>
+        <Table borderStyle={{ borderWidth: 1, borderColor: '#c8e1ff' }}>
+          {tableData.map((row, index) => (
+            <Row
+              key={index}
+              data={row}
+              widthArr={[200, 150, 120, 120]}
+              style={styles.row}
+              textStyle={styles.text}
+            />
+          ))}
+        </Table>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  head: {
-    height: 40,
-    backgroundColor: "#f1f8ff",
-  },
-  text: {
-    textAlign: "center",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 5,
-    margin: 2,
-    flex: 1,
-    textAlign: "center",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  button: {
-    backgroundColor: "#007bff",
-    padding: 5,
-    margin: 2,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: "#fff",
-    textAlign: "center",
-  },
+  container: { flex: 1, padding: 10 },
+  head: { height: 40, backgroundColor: '#e0ffe0' },
+  textHead: { textAlign: 'center', fontWeight: 'bold' },
+  row: { height: 50 },
+  text: { textAlign: 'center', padding: 6 },
+  actions: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
+  actionText: { color: '#007bff', fontWeight: 'bold' },
+  actionTextDelete: { color: '#dc3545', fontWeight: 'bold' },
 });
