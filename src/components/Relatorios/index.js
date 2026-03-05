@@ -26,7 +26,7 @@ export default function Relatorios() {
 
   const widthArr = [120, 100, 90, 110, 180, 110, 100, 140]; // Ajustado para melhor visualização
 
-  const API_URL = "http://192.168.112.1:3000/api/produtos";
+  const API_URL = "http://192.168.0.101:3000/api/produtos";
 
   const getTurno = () => {
     const agora = moment().tz("America/Sao_Paulo");
@@ -55,7 +55,7 @@ export default function Relatorios() {
 
       const linhas = produtos.map((item) => [
         item.nome || item.descricao || "—",
-        `${item.quantidade_por_unidade || 0} ${item.unidade || "kg"}`,
+        `${item.peso || 0} ${item.unidade || "kg"}`,
         item.quantidade_de_pacotes || item.quantidade || 0,
         formatarData(item.dataDeValidade || item.validade),
         item.descricao || "—",

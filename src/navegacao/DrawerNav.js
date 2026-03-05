@@ -14,7 +14,7 @@ import NossosHorarios from "../components/NossosHorarios/index";
 import QuemSomos from "../components/QuemSomos/QuemSomos";
 import Cadastro from "../components/CadastroProduto/index";
 import Dashboard from "../components/Dashboard/index";
-import Cestas from "../components/Receber cestas/index";
+import Cestas from "../components/Recebercestas/index";
 
 export default props => {
     const telas = [

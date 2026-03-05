@@ -1,15 +1,19 @@
 import React, { useState, useCallback } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Alert } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from "react-native";
 import { Table, Row } from "react-native-table-component";
-import { useFocusEffect, useRoute, useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native"; // só isso fica
 import Orientation from "react-native-orientation-locker";
 
 const API_URL = "http://192.168.0.101:3000/api/cestas";
 
 export default function RelatoriosCestas() {
-  const route = useRoute();
-  const navigation = useNavigation();
-
   const [tableData, setTableData] = useState([]);
 
   const carregarCestas = async () => {

@@ -28,7 +28,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchProdutos = async () => {
       try {
-        const url = 'http://192.168.112.1:3000/api/produtos';
+        const url = 'http://192.168.0.101:3000/api/produtos';
         console.log('Buscando produtos em:', url);
 
         const response = await fetch(url);

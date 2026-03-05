@@ -5,6 +5,7 @@ import { NavigationContainer } from "@react-navigation/native";
 
 
 import DrawerNav from "./navegacao/DrawerNav";
+// import Cestas from "../src/components/Recebercestas/index";
 
 
 export default props =>{
