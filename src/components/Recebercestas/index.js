@@ -10,7 +10,7 @@ import { Picker } from "@react-native-picker/picker";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { Icon } from "react-native-paper";
-import Relatorios from "../Relatorios cestas"; // ajuste o caminho correto se necessário
+import Relatorios from "../Relatorioscestas/index"; // ajuste o caminho correto se necessário
 
 const Tab = createBottomTabNavigator();
 
